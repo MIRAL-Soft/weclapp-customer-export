@@ -8,7 +8,7 @@ use miralsoft\weclapp\customerexport\Export;
 Config::$URI = 'https://xxx.weclapp.com/webapp/api/v1/';
 Config::$TOKEN = 'xxx';
 
-$customerStart = 12070;
+$customerStart = 12335;
 
 $export = new Export(true, 'export', 'egisExport.csv', $customerStart);
 $data = $export->exportEgisOnline();

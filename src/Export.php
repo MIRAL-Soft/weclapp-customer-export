@@ -210,6 +210,7 @@ class Export
             // loop all customers and add the data
             foreach ($this->customers as $customer) {
                 $cCustomer = new WeclappCustomer($customer);
+                $isCompany = $cCustomer->get('partyType') != 'PERSON';
 
                 // Anonymous company will be ignoerd
                 if ($cCustomer->get('company') == 'ANONYMOUS_COMPANY') continue;
@@ -225,11 +226,13 @@ class Export
                 // Gets all data from weclappfields
                 foreach ($weclappFields as $field) {
                     if($field == 'companyCustomer') {
-                        $salutation = $cCustomer->get('salutation');
-                        array_push($customerData, ($salutation != 'MRS' && $salutation != 'MR') ? 'J' : 'N');
+                        array_push($customerData, $isCompany ? 'J' : 'N');
                     } elseif ($field == 'salutation') {
                         $salutation = $cCustomer->get('salutation');
-                        $salutation = $salutation == 'MRS' ? 'Frau' : ($salutation == 'MR' ? "Herr" : "Firma");
+
+                        if(!$isCompany) $salutation = $salutation == 'MRS' ? 'Frau' : ($salutation == 'MR' ? "Herr" : "Herr");
+                        else $salutation = 'Firma';
+
                         array_push($customerData, $salutation);
                     } elseif ($field != '') {
                         array_push($customerData, $cCustomer->get($field));
