@@ -191,6 +191,61 @@ class Export
     }
 
     /**
+     * Exports the customers in a csv for egis
+     * @return bool|array true = erfolgreich | false = nicht erfolgreich
+     *                      if a array, all csv-data as array
+     */
+    public function exportEgisOnline()
+    {
+        // If some customers are found
+        if (is_array($this->customers) && count($this->customers) > 0) {
+            $csvData = [];
+
+            //Example in german:
+            //Kundennr;Firmenkunde;Anrede;Name1;Name2;Name3;Ort;PLZ;Straße;Land;E-Mail;Telefon;Fax;Mobile
+            //0001;N;Herr;Max Mustermann;;;Testhausen;01234;Testweg 25;DE;mail@test.de;;;012345678912
+            //2135;J;Firma;BeispielfirmaXYZ;;;Beispielberg;12345;Beispielstr 12;DE;mail@beispielfirmaxyz.de;;;
+            $weclappFields = array('customerNumber', 'companyCustomer', 'salutation', 'company', '', '', 'city', 'zipcode', 'street1', 'countryCode', 'email', 'phone', 'fax', '');
+
+            // loop all customers and add the data
+            foreach ($this->customers as $customer) {
+                $cCustomer = new WeclappCustomer($customer);
+
+                // Anonymous company will be ignoerd
+                if ($cCustomer->get('company') == 'ANONYMOUS_COMPANY') continue;
+
+                // Gets the customer number and saves if it is the biggest
+                $cusNo = $cCustomer->get('customerNumber');
+                if (isset($cusNo) && is_numeric($cusNo) && $this->lastCustomerNo < $cusNo) {
+                    $this->lastCustomerNo = $cusNo;
+                }
+
+                $customerData = [];
+
+                // Gets all data from weclappfields
+                foreach ($weclappFields as $field) {
+                    if($field == 'companyCustomer') {
+                        $salutation = $cCustomer->get('salutation');
+                        array_push($customerData, ($salutation != 'MRS' && $salutation != 'MR') ? 'J' : 'N');
+                    } elseif ($field == 'salutation') {
+                        $salutation = $cCustomer->get('salutation');
+                        $salutation = $salutation == 'MRS' ? 'Frau' : ($salutation == 'MR' ? "Herr" : "Firma");
+                        array_push($customerData, $salutation);
+                    } elseif ($field != '') {
+                        array_push($customerData, $cCustomer->get($field));
+                    } else {
+                        array_push($customerData, '');
+                    }
+                }
+
+                array_push($csvData, $customerData);
+            }
+
+            return $this->isGenerateCSVFile() ? $this->generateCSV($csvData, true) : $csvData;
+        }
+    }
+
+    /**
      * Generates the CSV file with the given data
      *
      * @param array $csvData the data for the csv
